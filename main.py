@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 
 import config
-
+from model import User, UserInDB, Token, TokenDate
 
 user_db = {
     'jonhdoe': {
@@ -35,24 +35,7 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 app = FastAPI()
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
-
-class TokenData(BaseModel):
-    username: str | None = None
-
-
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    fullname: str | None = None
-    disable: bool | None = None
-
-
-class UserInDB(User):
-    hashed_password: str
 
 
 async def hash_password(password):
