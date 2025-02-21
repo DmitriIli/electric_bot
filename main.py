@@ -10,23 +10,7 @@ from pydantic import BaseModel
 
 import config
 from model import User, UserInDB, Token, TokenDate
-
-user_db = {
-    'jonhdoe': {
-        'username': 'jonhdoe',
-        'full_name': 'Jonh Doe',
-        'email': 'jonhdoe@mail.mail',
-        'hashed_password': 'password'.__hash__(),
-        'disable': False
-    },
-    'alice': {
-        'username': 'alice',
-        'full_name': 'Alice Doe',
-        'email': 'alicedoe@mail.mail',
-        'hashed_password': 'password',
-        'disable': True
-    },
-}
+from user_db import user_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
@@ -34,16 +18,11 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 app = FastAPI()
 
+async def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password,hashed_password)
 
-
-
-
-async def hash_password(password):
+async def get_password_hash(password):
     return pwd_context.hash(password)
-
-
-async def get_hash(password: str):
-    return password.__hash__()
 
 
 async def get_user(db, username: str):
@@ -51,6 +30,14 @@ async def get_user(db, username: str):
         user_dict = db[username]
         return UserInDB(**user_dict)
 
+
+def authenticate_user(user_db,  username:str,  password:str):
+    user = get_user(user_db, username)
+    if not user:
+        return False
+    if not verify_password(password,  user.hashed_password):
+        return False
+    return user
 
 async def decode_token(token):
     user = await get_user(user_db, token)
