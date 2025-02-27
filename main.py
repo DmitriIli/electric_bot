@@ -19,7 +19,7 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 app = FastAPI()
 
-;
+
 async def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -34,16 +34,16 @@ async def get_user(db, username: str):
         return UserInDB(**user_dict)
 
 
-def authenticate_user(user_db,  username: str,  password: str):
-    user = get_user(user_db, username)
+async def authenticate_user(user_db,  username: str,  password: str):
+    user = await get_user(user_db, username)
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not await verify_password(password, user.hashed_password):
         return False
     return user
 
 
-def create_access_token(data: dict,  expires_delta: timedelta | None = None):
+async def create_access_token(data: dict,  expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -70,10 +70,10 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         token_data = TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_user(user_db, username=token_data.username)
-    if user is None:
+    user_in_db = await get_user(user_db, username=token_data.username)
+    if user_in_db is None:
         raise credentials_exception
-    return user
+    return user_in_db
 
 
 async def get_current_active_user(
@@ -91,7 +91,7 @@ async def get_current_active_user(
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
-    user = authenticate_user(user_db, form_data.username, form_data.password)
+    user = await authenticate_user(user_db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -100,14 +100,14 @@ async def login_for_access_token(
         )
     access_token_expires = timedelta(
         minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    access_token = await create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
 
 
 @app.get('/user/me')
-async def read_user_me(current_user: Annotated[User, Depends(get_current_active_user)]):
+async def read_user_me(current_user: Annotated[User, Depends(get_current_active_user)],) -> User:
     return current_user
 
 
