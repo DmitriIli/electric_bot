@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
 class Token(BaseModel):
@@ -20,3 +20,10 @@ class User(BaseModel):
 
 class UserInDB(User):
     hashed_password: str
+
+
+class Hero(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    age: int | None = Field(default=None, index=True)
+    
