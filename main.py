@@ -6,11 +6,12 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import FileResponse, Response, JSONResponse
 from passlib.context import CryptContext
 
 
 import config
-from model import User, UserInDB, Token, TokenData
+from model import User, UserInDB, Token, TokenData, TestUser, Feedback
 from user_db import user_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
@@ -116,3 +117,25 @@ async def read_own_items(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     return [{"item_id": "Foo", "owner": current_user.username}]
+
+
+@app.get("/")
+async def get_index():
+    return FileResponse('index.html')
+
+
+@app.post("/calculate")
+async def calculate(par1: int, par2: int):
+    return {'resault': {par1+par2}}
+
+
+@app.get('/test')
+async def test_user(user_name, id) -> JSONResponse:
+    user = TestUser(user_name=user_name, id=id)
+    return user.model_dump()
+
+
+@app.get('/feedback')
+async def feedback(feedback:Feedback):
+    return { "message": "Feedback received. Thank you, {feedback.name}!"}
+
