@@ -12,7 +12,7 @@ from passlib.context import CryptContext
 
 import config
 from model import User, UserInDB, Token, TokenData, TestUser, Feedback, UserCreate
-from user_db import user_db
+from db import user_db, product_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
@@ -149,9 +149,30 @@ async def create_user(name: str, email: str, age: int, is_subscribed: bool = Fal
 
 @app.get('/product/{product_id}')
 async def get_product(product_id: int):
-    return {}
+    try:
+        product = [product_db[key] for key in product_db.keys(
+        ) if product_db[key]['product_id'] == product_id][0]
+        return product
+    except Exception as e:
+        return e
 
 
-@app.get('/product/search')
-async def serch_product(keyword: str, category: str|None = None, limit: int = 10):
-    return {}
+@app.get('/product/search/')
+async def serch_product(keyword: str, category: str | None = None, limit: int = 10) :
+    try:
+        if category:
+            products_category = [product_db[key] for key in product_db.keys(
+            ) if product_db[key]['category'] == category]
+            products = [
+                product for product in products_category if product['name'].lower().find(keyword.lower()) != -1][:limit]
+            return products
+        pruducts = [product_db[key] for key in product_db.keys(
+        ) if product_db[key]['name'].lower().find(keyword.lower()) != -1]
+        return pruducts
+    except Exception as e:
+        return e
+
+@app.post('/login')
+async def login_user(username:str, password:str) -> Token:
+    return Token
+
