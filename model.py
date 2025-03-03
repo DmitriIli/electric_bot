@@ -1,4 +1,4 @@
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, PositiveInt, Field, EmailStr
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
@@ -42,3 +42,10 @@ class TestUser(BaseModel):
 class Feedback(BaseModel):
     name: str
     message: str
+
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    age: PositiveInt | None = Field(default=0, lt=100)
+    is_subscribed: bool = Field(default=False)

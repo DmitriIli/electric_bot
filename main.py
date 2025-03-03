@@ -11,7 +11,7 @@ from passlib.context import CryptContext
 
 
 import config
-from model import User, UserInDB, Token, TokenData, TestUser, Feedback
+from model import User, UserInDB, Token, TokenData, TestUser, Feedback, UserCreate
 from user_db import user_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
@@ -136,6 +136,22 @@ async def test_user(user_name, id) -> JSONResponse:
 
 
 @app.get('/feedback')
-async def feedback(feedback:Feedback):
-    return { "message": "Feedback received. Thank you, {feedback.name}!"}
+async def feedback(feedback: Feedback):
+    return {"message": "Feedback received. Thank you, {feedback.name}!"}
 
+
+@app.get('/create_user')
+async def create_user(name: str, email: str, age: int, is_subscribed: bool = False) -> UserCreate:
+    user = UserCreate(name=name, email=email, age=age,
+                      is_subscribed=is_subscribed)
+    return user.model_dump()
+
+
+@app.get('/product/{product_id}')
+async def get_product(product_id: int):
+    return {}
+
+
+@app.get('/product/search')
+async def serch_product(keyword: str, category: str|None = None, limit: int = 10):
+    return {}
