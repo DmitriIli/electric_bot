@@ -4,9 +4,9 @@ from typing import Annotated
 
 import jwt
 from jwt.exceptions import InvalidTokenError
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Form, Cookie, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import FileResponse, Response, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from passlib.context import CryptContext
 
 
@@ -158,7 +158,7 @@ async def get_product(product_id: int):
 
 
 @app.get('/product/search/')
-async def serch_product(keyword: str, category: str | None = None, limit: int = 10) :
+async def serch_product(keyword: str, category: str | None = None, limit: int = 10):
     try:
         if category:
             products_category = [product_db[key] for key in product_db.keys(
@@ -172,7 +172,38 @@ async def serch_product(keyword: str, category: str | None = None, limit: int = 
     except Exception as e:
         return e
 
-@app.post('/login')
-async def login_user(username:str, password:str) -> Token:
-    return Token
 
+@app.post('/login')
+async def login_user(response: Response, username: str = Form(...), password: str = Form(...)) -> Response:
+    try:
+        user = user_db[username]
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username",
+        )
+    if await verify_password(password, user['hashed_password']):
+        token = 'username' + ' ' + 'session_token'
+        user['session_token'] = token
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
+        )
+    response = JSONResponse(content={"message": "Login successful"})
+    response.set_cookie(key='session_token', value=token, httponly=True)
+
+    return response
+
+
+@app.get("/user")
+async def get_user(request: Request):
+    session_token = request.cookies.get('session_token')
+    print(session_token)
+    if session_token is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    if session_token != "jonhdoe session_token":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    return {"username": "user123", "email": "user123@example.com"}
